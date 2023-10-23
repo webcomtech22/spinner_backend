@@ -97,6 +97,39 @@ app.post("/addPrice",upload.none(),(req,res)=>{
     
 })
 
+app.get("/showBetsData",(req,res)=>{
+
+    //this query for not counting 0 its counted from 1 minimum value
+    // const q =  `SELECT field, COUNT(*) AS count
+    // FROM (
+    //     SELECT 'tiger' AS field, tiger AS count FROM bets WHERE tiger > 0 
+    //     UNION 
+    //     SELECT 'lion' AS field, lion AS count FROM bets WHERE lion > 0 
+    //     UNION 
+    //     SELECT 'dragon' AS field, dragon AS count FROM bets WHERE dragon > 0 
+    //     UNION 
+    //     SELECT 'king' AS field, king AS count FROM bets WHERE king > 0 
+    // ) AS subquery
+    // GROUP BY field
+    // ORDER BY count ASC
+    // LIMIT 1;`;
+    
+    //this query to find minimum value as 0 which has
+    const q =  `SELECT 'tiger' AS field, COUNT(tiger) AS count FROM bets WHERE tiger > 0 
+    UNION 
+    SELECT 'lion' AS field, COUNT(lion) AS count FROM bets WHERE lion > 0 
+    UNION 
+    SELECT 'dragon' AS field, COUNT(dragon) AS count FROM bets WHERE dragon > 0 
+    UNION 
+    SELECT 'king' AS field, COUNT(king) AS count FROM bets WHERE king > 0 
+    ORDER BY count ASC LIMIT 1;
+    `;    
+
+    db.query(q,(err,rows)=>{
+        if(err) throw err;
+        res.send(rows);
+    })
+})
 // app.delete("/deletePrice",(req,res)=>{
 //     q= "delete from bets"
 //     db.query(q,(err,row)=>{
