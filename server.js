@@ -127,7 +127,7 @@ app.get("/showBetsData",(req,res)=>{
 
     db.query(q,(err,rows)=>{
         if(err) throw err;
-        res.send(rows);
+        res.send(rows[0]);
     })
 })
 // app.delete("/deletePrice",(req,res)=>{
