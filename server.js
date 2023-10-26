@@ -59,6 +59,7 @@ app.get("/getData",(req,res)=>{
 
 app.get("/getSingleData/:id",(req,res)=>{
     q = "select * from spinner_data where id = ?"
+    // console.log(req.params.id)
     db.query(q,[req.params.id],(err,result)=>{
         if(err) throw err;
         res.json(result[0])
@@ -66,7 +67,9 @@ app.get("/getSingleData/:id",(req,res)=>{
 })
 
 app.post("/addPrice",upload.none(),(req,res)=>{
-    const { id, price } = req.body;
+    let generatedId = req.body.generatedId
+    let price = parseInt(req.body.price)
+    id = req.body.id 
     let columnName;
     // console.log(id)
     // console.log(price)
@@ -81,15 +84,15 @@ app.post("/addPrice",upload.none(),(req,res)=>{
     }    
     // console.log(columnName)
     if (columnName) {
-        const q = `INSERT INTO bets(${columnName}) VALUES (?)`;
+        const q = `INSERT INTO bets(${columnName},generatedId) VALUES (?,?)`;
     
-        db.query(q, [price], (err, result, fields) => {
+        db.query(q, [price,generatedId], (err, result, fields) => {
             if (err) {
                 console.error(err);
                 return res.status(500).json({ error: "Internal server error" });
             }
     
-            return res.json({ message: "Data added successfully" });
+            return res.json({ message: "Data added successfully",generatedId});
         });
     } else {
         return res.status(400).json({ error: "Invalid ID provided" });
@@ -97,8 +100,9 @@ app.post("/addPrice",upload.none(),(req,res)=>{
     
 })
 
-app.get("/showBetsData",(req,res)=>{
-
+app.get("/showBetsData/:id",(req,res)=>{
+    id = req.params.id
+console.log(id)
     //this query for not counting 0 its counted from 1 minimum value
     // const q =  `SELECT field, COUNT(*) AS count
     // FROM (
@@ -115,18 +119,20 @@ app.get("/showBetsData",(req,res)=>{
     // LIMIT 1;`;
     
     //this query to find minimum value as 0 which has
-    const q =  `SELECT 'tiger' AS field, COUNT(tiger) AS count FROM bets WHERE tiger > 0 
+    const q =  `SELECT 'tiger' AS field, COUNT(tiger) AS count FROM bets WHERE generatedId = ? AND tiger>=0
     UNION 
-    SELECT 'lion' AS field, COUNT(lion) AS count FROM bets WHERE lion > 0 
+    SELECT 'lion' AS field, COUNT(lion) AS count FROM bets WHERE generatedId = ? AND lion>=0
     UNION 
-    SELECT 'dragon' AS field, COUNT(dragon) AS count FROM bets WHERE dragon > 0 
+    SELECT 'dragon' AS field, COUNT(dragon) AS count FROM bets WHERE generatedId = ? AND dragon>=0
     UNION 
-    SELECT 'king' AS field, COUNT(king) AS count FROM bets WHERE king > 0 
+    SELECT 'king' AS field, COUNT(king) AS count FROM bets WHERE generatedId = ? AND king>=0
     ORDER BY count ASC LIMIT 1;
+    
     `;    
 
-    db.query(q,(err,rows)=>{
+    db.query(q,[id,id,id,id],(err,rows)=>{
         if(err) throw err;
+        console.log(rows[0])
         res.send(rows[0]);
     })
 })
