@@ -70,6 +70,8 @@ app.post("/addPrice",upload.none(),(req,res)=>{
     let generatedId = req.body.generatedId
     let price = parseInt(req.body.price)
     id = req.body.id 
+    console.log(id)
+    console.log(generatedId)
     let columnName;
     // console.log(id)
     // console.log(price)
@@ -81,11 +83,14 @@ app.post("/addPrice",upload.none(),(req,res)=>{
         columnName = 'dragon';
     } else if (id === '4') {
         columnName = 'king';
-    }    
+    }else{
+        
+    } 
+
     // console.log(columnName)
     if (columnName) {
         const q = `INSERT INTO bets(${columnName},generatedId) VALUES (?,?)`;
-    
+
         db.query(q, [price,generatedId], (err, result, fields) => {
             if (err) {
                 console.error(err);
@@ -128,12 +133,25 @@ console.log(id)
     SELECT 'king' AS field, COUNT(king) AS count FROM bets WHERE generatedId = ? AND king>=0
     ORDER BY count ASC LIMIT 1;
     
-    `;    
+    `;   
+    // if(tiger === 0 && lion === 0 && dragon === 0 && king === 0){
+
+    //         const a = Math.floor(Math.random() * 4)
+    //         console .log(a)
+    // } 
 
     db.query(q,[id,id,id,id],(err,rows)=>{
-        if(err) throw err;
-        console.log(rows[0])
-        res.send(rows[0]);
+       if (err) throw err;
+        if (rows.length === 0 || rows[0].count === 0 && rows[0].field === 'tiger') {
+            // If there are no bets in any field, generate a random field and send it as the response
+            const fields = ['tiger', 'lion', 'dragon', 'king'];
+            const randomField = fields[Math.floor(Math.random() * fields.length)];
+            res.send({ field: randomField, count: 0 });
+        } else {
+            // If there are bets in at least one field, send the response
+            res.send(rows[0]);
+            console.log(rows[0])
+        }
     })
 })
 // app.delete("/deletePrice",(req,res)=>{
