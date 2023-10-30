@@ -70,8 +70,8 @@ app.post("/addPrice",upload.none(),(req,res)=>{
     let generatedId = req.body.generatedId
     let price = parseInt(req.body.price)
     id = req.body.id 
-    console.log(id)
-    console.log(generatedId)
+    // console.log(id)
+    // console.log(generatedId)
     let columnName;
     // console.log(id)
     // console.log(price)
@@ -124,7 +124,7 @@ console.log(id)
     // LIMIT 1;`;
     
     //this query to find minimum value as 0 which has
-    const q =  `SELECT 'tiger' AS field, COUNT(tiger) AS count FROM bets WHERE generatedId = ? AND tiger>=0
+    const q =  `SELECT 'tiger' AS field, COUNT(tiger) AS count FROM bets WHERE generatedId = ? AND tiger >=0
     UNION 
     SELECT 'lion' AS field, COUNT(lion) AS count FROM bets WHERE generatedId = ? AND lion>=0
     UNION 
