@@ -105,55 +105,85 @@ app.post("/addPrice",upload.none(),(req,res)=>{
     
 })
 
-app.get("/showBetsData/:id",(req,res)=>{
-    id = req.params.id
-console.log(id)
-    //this query for not counting 0 its counted from 1 minimum value
-    // const q =  `SELECT field, COUNT(*) AS count
-    // FROM (
-    //     SELECT 'tiger' AS field, tiger AS count FROM bets WHERE tiger > 0 
-    //     UNION 
-    //     SELECT 'lion' AS field, lion AS count FROM bets WHERE lion > 0 
-    //     UNION 
-    //     SELECT 'dragon' AS field, dragon AS count FROM bets WHERE dragon > 0 
-    //     UNION 
-    //     SELECT 'king' AS field, king AS count FROM bets WHERE king > 0 
-    // ) AS subquery
-    // GROUP BY field
-    // ORDER BY count ASC
-    // LIMIT 1;`;
-    
-    //this query to find minimum value as 0 which has
-    const q =  `SELECT 'tiger' AS field, COUNT(tiger) AS count FROM bets WHERE generatedId = ? AND tiger >=0
-    UNION 
-    SELECT 'lion' AS field, COUNT(lion) AS count FROM bets WHERE generatedId = ? AND lion>=0
-    UNION 
-    SELECT 'dragon' AS field, COUNT(dragon) AS count FROM bets WHERE generatedId = ? AND dragon>=0
-    UNION 
-    SELECT 'king' AS field, COUNT(king) AS count FROM bets WHERE generatedId = ? AND king>=0
-    ORDER BY count ASC LIMIT 1;
-    
-    `;   
-    // if(tiger === 0 && lion === 0 && dragon === 0 && king === 0){
 
-    //         const a = Math.floor(Math.random() * 4)
-    //         console .log(a)
-    // } 
+//     //this query for not counting 0 its counted from 1 minimum value
+//     // const q =  `SELECT field, COUNT(*) AS count
+//     // FROM (
+//     //     SELECT 'tiger' AS field, tiger AS count FROM bets WHERE tiger > 0 
+//     //     UNION 
+//     //     SELECT 'lion' AS field, lion AS count FROM bets WHERE lion > 0 
+//     //     UNION 
+//     //     SELECT 'dragon' AS field, dragon AS count FROM bets WHERE dragon > 0 
+//     //     UNION 
+//     //     SELECT 'king' AS field, king AS count FROM bets WHERE king > 0 
+//     // ) AS subquery
+//     // GROUP BY field
+//     // ORDER BY count ASC
+//     // LIMIT 1;`;
+    
+//     //this query to find minimum value from minimum counts
+    // const q =  `SELECT 'tiger' AS field, COUNT(tiger) AS count FROM bets WHERE generatedId = ? AND tiger >=0
+    // UNION 
+    // SELECT 'lion' AS field, COUNT(lion) AS count FROM bets WHERE generatedId = ? AND lion>=0
+    // UNION 
+    // SELECT 'dragon' AS field, COUNT(dragon) AS count FROM bets WHERE generatedId = ? AND dragon>=0
+    // UNION 
+    // SELECT 'king' AS field, COUNT(king) AS count FROM bets WHERE generatedId = ? AND king>=0
+    // ORDER BY count ASC LIMIT 1;`
+    
+app.get("/showBetsData/:generatedId", (req, res) => {
+    const id = req.params.generatedId;
+    const price = req.body.price
 
-    db.query(q,[id,id,id,id],(err,rows)=>{
-       if (err) throw err;
-        if (rows.length === 0 || rows[0].count === 0 && rows[0].field === 'tiger') {
-            // If there are no bets in any field, generate a random field and send it as the response
+        //this query is used when any record is not with generatedid means null then it converts null to 0 then use coalesce function
+
+        // SELECT 'tiger' AS field, COALESCE(COUNT(tiger), 0) AS count FROM bets WHERE generatedId = ?
+        // UNION 
+        // SELECT 'lion' AS field, COALESCE(COUNT(lion), 0) AS count FROM bets WHERE generatedId = ?
+        // UNION 
+        // SELECT 'dragon' AS field, COALESCE(COUNT(dragon), 0) AS count FROM bets WHERE generatedId = ?
+        // UNION 
+        // SELECT 'king' AS field, COALESCE(COUNT(king), 0) AS count FROM bets WHERE generatedId = ?
+        // ORDER BY count ASC, field ASC;
+
+    const q = `
+        SELECT 'tiger' AS field, COALESCE(SUM(tiger), 0) AS price FROM bets WHERE generatedId = ?
+        UNION 
+        SELECT 'lion' AS field, COALESCE(SUM(lion), 0) AS price FROM bets WHERE generatedId = ?
+        UNION 
+        SELECT 'dragon' AS field, COALESCE(SUM(dragon), 0) AS price FROM bets WHERE generatedId = ?
+        UNION 
+        SELECT 'king' AS field, COALESCE(SUM(king), 0) AS price FROM bets WHERE generatedId = ?
+        ORDER BY count ASC, field ASC;`;
+
+    console.log(id)
+    db.query(q, [id, id, id, id], (err, rows, fields) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Internal server error" });
+        }
+
+        if (rows.length === 0 || rows.every(row => row.count === 0)) {
+            // If no data found for  generatedId or all counts are 0, 
             const fields = ['tiger', 'lion', 'dragon', 'king'];
             const randomField = fields[Math.floor(Math.random() * fields.length)];
-            res.send({ field: randomField, count: 0 });
-        } else {
-            // If there are bets in at least one field, send the response
-            res.send(rows[0]);
-            console.log(rows[0])
+            return res.json({ field: randomField, count: 0 }); // count is set to 0 for consistency
         }
-    })
-})
+
+        const minimumCount = rows[0].count;
+        const fieldsWithMinimumCount = rows.filter(row => row.count === minimumCount);
+
+        if (fieldsWithMinimumCount.length === 1) {
+            // if there'is only one field with the minimum count, return that field
+            return res.json(fieldsWithMinimumCount[0]);
+        } else {
+            //if there are multiple fields with the same minimum count, 
+            const randomIndex = Math.floor(Math.random() * fieldsWithMinimumCount.length);
+            return res.json(fieldsWithMinimumCount[randomIndex]);
+        }
+    });
+});
+
 // app.delete("/deletePrice",(req,res)=>{
 //     q= "delete from bets"
 //     db.query(q,(err,row)=>{
@@ -161,6 +191,7 @@ console.log(id)
 //         res.send({message:"deleted old prices"})
 //     })
 // })
+
 
 app.listen(PORT,()=>{
     console.log(`listening on port ${PORT}`)
